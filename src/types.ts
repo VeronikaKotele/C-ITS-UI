@@ -79,14 +79,10 @@ export type VehicleState = {
   emergencyTrail: Array<[number, number]>;
 };
 
-export type RsuState = {
+export type IntersectionState = {
   stationId: number;
   lat: number;
   lon: number;
-};
-
-export type IntersectionState = {
-  intersectionId: number;
   phase: SignalPhase;
   remainingSeconds: number;
   activeRequests: Record<number, RequestStatus>;

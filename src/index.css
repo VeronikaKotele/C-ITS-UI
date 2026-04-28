@@ -109,3 +109,50 @@ code {
   padding: 4px 8px;
   background: var(--code-bg);
 }
+
+.map-icon {
+  width: 36px;
+  height: 36px;
+  border-radius: 999px;
+  background: white;
+  display: grid;
+  place-items: center;
+  font-size: 22px;
+  box-shadow: 0 2px 8px rgb(0 0 0 / 25%);
+  border: 2px solid #444;
+}
+
+.map-icon.bus {
+  border-color: #2563eb;
+}
+
+.map-icon.emergency {
+  border-color: #dc2626;
+  animation: pulse 1s infinite;
+}
+
+.map-icon.car {
+  border-color: #64748b;
+}
+
+.map-icon.rsu {
+  border-color: #7c3aed;
+}
+
+.map-icon.intersection {
+  border-color: #16a34a;
+}
+
+@keyframes pulse {
+  0% {
+    transform: scale(1);
+  }
+
+  50% {
+    transform: scale(1.12);
+  }
+
+  100% {
+    transform: scale(1);
+  }
+}

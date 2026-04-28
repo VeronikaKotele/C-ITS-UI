@@ -4,20 +4,17 @@ import { startMockCitsStream } from "./ws";
 import type {
   CitsEvent,
   IntersectionState,
-  RsuState,
   VehicleState,
 } from "./types";
 
 type AppState = {
   vehicles: Record<number, VehicleState>;
-  rsus: Record<number, RsuState>;
   intersections: Record<number, IntersectionState>;
   totalCamCount: number;
 };
 
 const initialState: AppState = {
   vehicles: {},
-  rsus: {},
   intersections: {},
   totalCamCount: 0,
 };
@@ -25,21 +22,6 @@ const initialState: AppState = {
 function reducer(state: AppState, event: CitsEvent): AppState {
   switch (event.type) {
     case "cam": {
-      if (event.stationType === "RSU") {
-        return {
-          ...state,
-          totalCamCount: state.totalCamCount + 1,
-          rsus: {
-            ...state.rsus,
-            [event.stationId]: {
-              stationId: event.stationId,
-              lat: event.lat,
-              lon: event.lon,
-            },
-          },
-        };
-      }
-
       const previous = state.vehicles[event.stationId];
 
       const shouldTrace =
@@ -120,7 +102,9 @@ function reducer(state: AppState, event: CitsEvent): AppState {
         intersections: {
           ...state.intersections,
           [event.intersectionId]: {
-            intersectionId: event.intersectionId,
+            stationId: event.intersectionId,
+            lat: previousIntersection?.lat ?? 48.776,
+            lon: previousIntersection?.lon ?? 9.183,
             phase: previousIntersection?.phase ?? "RED",
             remainingSeconds:
               previousIntersection?.remainingSeconds ?? 0,
@@ -141,7 +125,9 @@ function reducer(state: AppState, event: CitsEvent): AppState {
         intersections: {
           ...state.intersections,
           [event.intersectionId]: {
-            intersectionId: event.intersectionId,
+            stationId: event.intersectionId,
+            lat: previous?.lat ?? 48.776,
+            lon: previous?.lon ?? 9.183,
             phase: event.phase,
             remainingSeconds: event.remainingSeconds,
             activeRequests: previous?.activeRequests ?? {},
@@ -176,7 +162,6 @@ export default function App() {
       >
         <CitsMap
           vehicles={state.vehicles}
-          rsus={state.rsus}
           intersections={state.intersections}
         />
 
@@ -190,7 +175,7 @@ export default function App() {
           <h3>Intersections</h3>
           {Object.values(state.intersections).map((intersection) => (
             <div
-              key={intersection.intersectionId}
+              key={intersection.stationId}
               style={{
                 border: "1px solid #ddd",
                 borderRadius: 8,
@@ -198,7 +183,7 @@ export default function App() {
                 marginBottom: 8,
               }}
             >
-              <strong>Intersection {intersection.intersectionId}</strong>
+              <strong>Intersection {intersection.stationId}</strong>
               <br />
               Phase: {intersection.phase}
               <br />

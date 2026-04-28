@@ -1,10 +1,12 @@
 import { useEffect, useReducer } from "react";
 import { CitsMap } from "./components/CitsMap";
 import { startCitsWebSocket } from "./ws";
-import type {
-  CitsEvent,
-  IntersectionState,
-  VehicleState,
+import {
+  translateRole,
+  translateStationType,
+  type CitsEvent,
+  type IntersectionState,
+  type VehicleState,
 } from "./types";
 
 type AppState = {
@@ -36,8 +38,8 @@ function reducer(state: AppState, event: CitsEvent): AppState {
           ...state.vehicles,
           [event.stationId]: {
             stationId: event.stationId,
-            stationType: event.stationType,
-            role: event.role,
+            stationType: translateStationType(event.stationType),
+            role: translateRole(event.role),
             lat: event.lat,
             lon: event.lon,
             speed: event.speed,

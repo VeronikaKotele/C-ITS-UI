@@ -87,3 +87,31 @@ export type IntersectionState = {
   remainingSeconds: number;
   activeRequests: Record<number, RequestStatus>;
 };
+
+export function translateStationType(type: string): StationType {
+  switch (type) {
+    case "STATION_TYPE_PASSENGER_CAR":
+      return "PASSENGER_CAR";
+    case "STATION_TYPE_BUS":
+      return "BUS";
+    case "STATION_TYPE_SPECIAL_VEHICLES":
+      return "EMERGENCY";
+    case "STATION_TYPE_ROAD_SIDE_UNIT":
+      return "RSU";
+    default:
+      return "PASSENGER_CAR";
+  }
+}
+
+export function translateRole(role: string): VehicleRole {
+  switch (role) {
+    case "VEHICLE_ROLE_DEFAULT":
+      return "DEFAULT";
+    case "VEHICLE_ROLE_PUBLIC_TRANSPORT":
+      return "PUBLIC_TRANSPORT";
+    case "VEHICLE_ROLE_EMERGENCY":
+      return "EMERGENCY";
+    default:
+      return "DEFAULT";
+  }
+}

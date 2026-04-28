@@ -1,122 +1,238 @@
-import { useState } from 'react'
-import reactLogo from './assets/react.svg'
-import viteLogo from './assets/vite.svg'
-import heroImg from './assets/hero.png'
-import './App.css'
+import { useEffect, useReducer } from "react";
+import { CitsMap } from "./components/CitsMap";
+import { startMockCitsStream } from "./ws";
+import type {
+  CitsEvent,
+  IntersectionState,
+  RsuState,
+  VehicleState,
+} from "./types";
 
-function App() {
-  const [count, setCount] = useState(0)
+type AppState = {
+  vehicles: Record<number, VehicleState>;
+  rsus: Record<number, RsuState>;
+  intersections: Record<number, IntersectionState>;
+  totalCamCount: number;
+};
 
-  return (
-    <>
-      <section id="center">
-        <div className="hero">
-          <img src={heroImg} className="base" width="170" height="179" alt="" />
-          <img src={reactLogo} className="framework" alt="React logo" />
-          <img src={viteLogo} className="vite" alt="Vite logo" />
-        </div>
-        <div>
-          <h1>Get started</h1>
-          <p>
-            Edit <code>src/App.tsx</code> and save to test <code>HMR</code>
-          </p>
-        </div>
-        <button
-          type="button"
-          className="counter"
-          onClick={() => setCount((count) => count + 1)}
-        >
-          Count is {count}
-        </button>
-      </section>
+const initialState: AppState = {
+  vehicles: {},
+  rsus: {},
+  intersections: {},
+  totalCamCount: 0,
+};
 
-      <div className="ticks"></div>
+function reducer(state: AppState, event: CitsEvent): AppState {
+  switch (event.type) {
+    case "cam": {
+      if (event.stationType === "RSU") {
+        return {
+          ...state,
+          totalCamCount: state.totalCamCount + 1,
+          rsus: {
+            ...state.rsus,
+            [event.stationId]: {
+              stationId: event.stationId,
+              lat: event.lat,
+              lon: event.lon,
+            },
+          },
+        };
+      }
 
-      <section id="next-steps">
-        <div id="docs">
-          <svg className="icon" role="presentation" aria-hidden="true">
-            <use href="/icons.svg#documentation-icon"></use>
-          </svg>
-          <h2>Documentation</h2>
-          <p>Your questions, answered</p>
-          <ul>
-            <li>
-              <a href="https://vite.dev/" target="_blank">
-                <img className="logo" src={viteLogo} alt="" />
-                Explore Vite
-              </a>
-            </li>
-            <li>
-              <a href="https://react.dev/" target="_blank">
-                <img className="button-icon" src={reactLogo} alt="" />
-                Learn more
-              </a>
-            </li>
-          </ul>
-        </div>
-        <div id="social">
-          <svg className="icon" role="presentation" aria-hidden="true">
-            <use href="/icons.svg#social-icon"></use>
-          </svg>
-          <h2>Connect with us</h2>
-          <p>Join the Vite community</p>
-          <ul>
-            <li>
-              <a href="https://github.com/vitejs/vite" target="_blank">
-                <svg
-                  className="button-icon"
-                  role="presentation"
-                  aria-hidden="true"
-                >
-                  <use href="/icons.svg#github-icon"></use>
-                </svg>
-                GitHub
-              </a>
-            </li>
-            <li>
-              <a href="https://chat.vite.dev/" target="_blank">
-                <svg
-                  className="button-icon"
-                  role="presentation"
-                  aria-hidden="true"
-                >
-                  <use href="/icons.svg#discord-icon"></use>
-                </svg>
-                Discord
-              </a>
-            </li>
-            <li>
-              <a href="https://x.com/vite_js" target="_blank">
-                <svg
-                  className="button-icon"
-                  role="presentation"
-                  aria-hidden="true"
-                >
-                  <use href="/icons.svg#x-icon"></use>
-                </svg>
-                X.com
-              </a>
-            </li>
-            <li>
-              <a href="https://bsky.app/profile/vite.dev" target="_blank">
-                <svg
-                  className="button-icon"
-                  role="presentation"
-                  aria-hidden="true"
-                >
-                  <use href="/icons.svg#bluesky-icon"></use>
-                </svg>
-                Bluesky
-              </a>
-            </li>
-          </ul>
-        </div>
-      </section>
+      const previous = state.vehicles[event.stationId];
 
-      <div className="ticks"></div>
-      <section id="spacer"></section>
-    </>
-  )
+      const shouldTrace =
+        previous?.isTracingEmergency || false;
+
+      const nextPosition: [number, number] = [event.lat, event.lon];
+
+      return {
+        ...state,
+        totalCamCount: state.totalCamCount + 1,
+        vehicles: {
+          ...state.vehicles,
+          [event.stationId]: {
+            stationId: event.stationId,
+            stationType: event.stationType,
+            role: event.role,
+            lat: event.lat,
+            lon: event.lon,
+            speed: event.speed,
+            heading: event.heading,
+            lastSeenMs: event.timestampMs,
+            activeRequestId: previous?.activeRequestId,
+            requestStatus: previous?.requestStatus,
+            isTracingEmergency: shouldTrace,
+            emergencyTrail: shouldTrace
+              ? [...(previous?.emergencyTrail ?? []), nextPosition]
+              : previous?.emergencyTrail ?? [],
+          },
+        },
+      };
+    }
+
+    case "srem": {
+      const vehicle = state.vehicles[event.stationId];
+
+      if (!vehicle) {
+        return state;
+      }
+
+      return {
+        ...state,
+        vehicles: {
+          ...state.vehicles,
+          [event.stationId]: {
+            ...vehicle,
+            activeRequestId: event.requestId,
+            requestStatus: "PENDING",
+            isTracingEmergency: vehicle.role === "EMERGENCY",
+            emergencyTrail:
+              vehicle.role === "EMERGENCY"
+                ? [[vehicle.lat, vehicle.lon]]
+                : vehicle.emergencyTrail,
+          },
+        },
+      };
+    }
+
+    case "ssem": {
+      const vehicle = state.vehicles[event.stationId];
+
+      const updatedVehicles = vehicle
+        ? {
+            ...state.vehicles,
+            [event.stationId]: {
+              ...vehicle,
+              requestStatus: event.status,
+              isTracingEmergency: false,
+            },
+          }
+        : state.vehicles;
+
+      const previousIntersection =
+        state.intersections[event.intersectionId];
+
+      return {
+        ...state,
+        vehicles: updatedVehicles,
+        intersections: {
+          ...state.intersections,
+          [event.intersectionId]: {
+            intersectionId: event.intersectionId,
+            phase: previousIntersection?.phase ?? "RED",
+            remainingSeconds:
+              previousIntersection?.remainingSeconds ?? 0,
+            activeRequests: {
+              ...(previousIntersection?.activeRequests ?? {}),
+              [event.requestId]: event.status,
+            },
+          },
+        },
+      };
+    }
+
+    case "spatem": {
+      const previous = state.intersections[event.intersectionId];
+
+      return {
+        ...state,
+        intersections: {
+          ...state.intersections,
+          [event.intersectionId]: {
+            intersectionId: event.intersectionId,
+            phase: event.phase,
+            remainingSeconds: event.remainingSeconds,
+            activeRequests: previous?.activeRequests ?? {},
+          },
+        },
+      };
+    }
+
+    default:
+      return state;
+  }
 }
 
-export default App
+export default function App() {
+  const [state, dispatch] = useReducer(reducer, initialState);
+
+  useEffect(() => {
+    const stop = startMockCitsStream(dispatch);
+    return stop;
+  }, []);
+
+  return (
+    <main style={{ padding: 16, fontFamily: "system-ui, sans-serif" }}>
+      <h1>C-ITS Live Dashboard</h1>
+
+      <section
+        style={{
+          display: "grid",
+          gridTemplateColumns: "2fr 1fr",
+          gap: 16,
+        }}
+      >
+        <CitsMap
+          vehicles={state.vehicles}
+          rsus={state.rsus}
+          intersections={state.intersections}
+        />
+
+        <aside>
+          <h2>Status</h2>
+
+          <p>
+            <strong>CAM received:</strong> {state.totalCamCount}
+          </p>
+
+          <h3>Intersections</h3>
+          {Object.values(state.intersections).map((intersection) => (
+            <div
+              key={intersection.intersectionId}
+              style={{
+                border: "1px solid #ddd",
+                borderRadius: 8,
+                padding: 12,
+                marginBottom: 8,
+              }}
+            >
+              <strong>Intersection {intersection.intersectionId}</strong>
+              <br />
+              Phase: {intersection.phase}
+              <br />
+              Remaining: {intersection.remainingSeconds}s
+              <br />
+              Active requests:
+              <pre>
+                {JSON.stringify(intersection.activeRequests, null, 2)}
+              </pre>
+            </div>
+          ))}
+
+          <h3>Vehicles</h3>
+          {Object.values(state.vehicles).map((vehicle) => (
+            <div
+              key={vehicle.stationId}
+              style={{
+                border: "1px solid #ddd",
+                borderRadius: 8,
+                padding: 12,
+                marginBottom: 8,
+              }}
+            >
+              <strong>Vehicle {vehicle.stationId}</strong>
+              <br />
+              Type: {vehicle.stationType}
+              <br />
+              Role: {vehicle.role}
+              <br />
+              Request: {vehicle.requestStatus ?? "none"}
+            </div>
+          ))}
+        </aside>
+      </section>
+    </main>
+  );
+}

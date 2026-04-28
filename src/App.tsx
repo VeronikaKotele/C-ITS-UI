@@ -1,6 +1,6 @@
 import { useEffect, useReducer } from "react";
 import { CitsMap } from "./components/CitsMap";
-import { startMockCitsStream } from "./ws";
+import { startCitsWebSocket } from "./ws";
 import type {
   CitsEvent,
   IntersectionState,
@@ -145,7 +145,7 @@ export default function App() {
   const [state, dispatch] = useReducer(reducer, initialState);
 
   useEffect(() => {
-    const stop = startMockCitsStream(dispatch);
+    const stop = startCitsWebSocket(dispatch);
     return stop;
   }, []);
 

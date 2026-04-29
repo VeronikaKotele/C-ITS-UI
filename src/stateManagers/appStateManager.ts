@@ -1,41 +1,62 @@
+import { act } from "react";
+import { VehicleMarker } from "../components/VehicleMarker";
 import {
   type CitsEvent,
-  type AppState, 
+  type AppState,
   translateRole,
-  translateStationType
+  translateStationType,
+  type VehicleState,
 } from "../types";
 
 export function appStateReducerOnCitsEvent(state: AppState, event: CitsEvent): AppState {
   switch (event.type) {
     case "cam": {
-      const previous = state.vehicles[event.stationId];
+      let vehicle = state.vehicles[event.stationId];
+      if (!vehicle) {
+        vehicle = {
+          stationId: event.stationId,
+          stationType: translateStationType(event.stationType),
+          role: translateRole(event.role),
+          lat: event.lat,
+          lon: event.lon,
+          lastSeenMs: event.timestampMs,
+          requestWaitingTrail: [],
+        };
+      }
 
-      const shouldTrace =
-        previous?.isTracingEmergency || false;
+      const shouldTrace = vehicle?.requestStatus == "PENDING" || false;
+      let requestWaitingTrail = vehicle?.requestWaitingTrail ?? [];
+      if (shouldTrace) {
+        requestWaitingTrail.push([event.lat, event.lon]);
+      }
 
-      const nextPosition: [number, number] = [event.lat, event.lon];
+      const cleanupRequest = vehicle?.requestStatus !== "PENDING" &&
+        vehicle?.lastRequestResolvedMs &&
+        event.timestampMs - vehicle?.lastRequestResolvedMs > 2000;
+
+      const updatedVehicle: VehicleState = {
+        ...vehicle,
+          lat: event.lat,
+          lon: event.lon,
+          speed: event.speed,
+          heading: event.heading,
+          lastSeenMs: event.timestampMs,
+          requestWaitingTrail: requestWaitingTrail,
+          ...(cleanupRequest
+            ? {
+                activeRequestId: undefined,
+                requestStatus: undefined,
+                lastRequestResolvedMs: undefined,
+              }
+            : {}),
+      };
 
       return {
         ...state,
         totalCamCount: state.totalCamCount + 1,
         vehicles: {
           ...state.vehicles,
-          [event.stationId]: {
-            stationId: event.stationId,
-            stationType: translateStationType(event.stationType),
-            role: translateRole(event.role),
-            lat: event.lat,
-            lon: event.lon,
-            speed: event.speed,
-            heading: event.heading,
-            lastSeenMs: event.timestampMs,
-            activeRequestId: previous?.activeRequestId,
-            requestStatus: previous?.requestStatus,
-            isTracingEmergency: shouldTrace,
-            emergencyTrail: shouldTrace
-              ? [...(previous?.emergencyTrail ?? []), nextPosition]
-              : previous?.emergencyTrail ?? [],
-          },
+          [event.stationId]: updatedVehicle,
         },
       };
     }
@@ -47,76 +68,75 @@ export function appStateReducerOnCitsEvent(state: AppState, event: CitsEvent): A
         return state;
       }
 
+      const updatedVehicle: VehicleState = {
+        ...vehicle,
+        activeRequestId: event.requestId,
+        requestStatus: "PENDING",
+        lastRequestResolvedMs: undefined,
+        requestWaitingTrail: [[vehicle.lat, vehicle.lon]],
+      };
+
       return {
         ...state,
         vehicles: {
           ...state.vehicles,
-          [event.stationId]: {
-            ...vehicle,
-            activeRequestId: event.requestId,
-            requestStatus: "PENDING",
-            isTracingEmergency: vehicle.role === "EMERGENCY",
-            emergencyTrail:
-              vehicle.role === "EMERGENCY"
-                ? [[vehicle.lat, vehicle.lon]]
-                : vehicle.emergencyTrail,
-          },
+          [event.stationId]: updatedVehicle,
         },
       };
     }
 
     case "ssem": {
       const vehicle = state.vehicles[event.stationId];
+      if (!vehicle) {
+        return state;
+      }
+
+      if (vehicle.activeRequestId !== event.requestId) {
+        // response for a request that is not active anymore - ignore.
+        return state;
+      }
 
       const updatedVehicles = vehicle
         ? {
             ...state.vehicles,
             [event.stationId]: {
               ...vehicle,
+              activeRequestId: event.requestId,
               requestStatus: event.status,
-              isTracingEmergency: false,
+              lastRequestResolvedMs: event.status !== "PENDING" ? event.timestampMs : vehicle.lastRequestResolvedMs,
+              requestWaitingTrail: [],
             },
           }
         : state.vehicles;
 
-      const previousIntersection =
-        state.intersections[event.intersectionId];
-
       return {
         ...state,
         vehicles: updatedVehicles,
-        intersections: {
-          ...state.intersections,
-          [event.intersectionId]: {
-            stationId: event.intersectionId,
-            lat: previousIntersection?.lat ?? 48.776,
-            lon: previousIntersection?.lon ?? 9.183,
-            phase: previousIntersection?.phase ?? "RED",
-            remainingSeconds:
-              previousIntersection?.remainingSeconds ?? 0,
-            activeRequests: {
-              ...(previousIntersection?.activeRequests ?? {}),
-              [event.requestId]: event.status,
-            },
-          },
-        },
       };
     }
 
     case "spatem": {
-      const previous = state.intersections[event.intersectionId];
+      let intersection = state.intersections[event.intersectionId];
+      if (!intersection) {
+        intersection = {
+          stationId: event.intersectionId,
+          lat: event.lat,
+          lon: event.lon,
+          phase: event.phase,
+          remainingSeconds: event.remainingSeconds,
+        };
+      }
 
       return {
         ...state,
         intersections: {
           ...state.intersections,
           [event.intersectionId]: {
-            stationId: event.intersectionId,
-            lat: previous?.lat ?? 48.776,
-            lon: previous?.lon ?? 9.183,
+            ...intersection,
             phase: event.phase,
             remainingSeconds: event.remainingSeconds,
-            activeRequests: previous?.activeRequests ?? {},
+            lat: event.lat,
+            lon: event.lon,
           },
         },
       };

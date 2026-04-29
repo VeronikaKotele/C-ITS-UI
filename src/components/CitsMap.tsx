@@ -38,7 +38,7 @@ export function CitsMap({ vehicles, intersections }: Props) {
       ))}
 
       {Object.values(vehicles)
-        .filter((vehicle) => vehicle.requestStatus === "PENDING" && vehicle.emergencyTrail.length > 1)
+        .filter((vehicle) => vehicle.requestStatus === "PENDING" && (vehicle.requestWaitingTrail?.length ?? 0) > 1)
         .map((vehicle) => (
           <RequestWaitingTrail
             key={`trail-${vehicle.stationId}`}

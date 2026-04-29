@@ -60,6 +60,8 @@ export type SpatemEvent = {
   phase: SignalPhase;
   remainingSeconds: number;
   timestampMs: number;
+  lat: number;
+  lon: number;
 };
 
 export type VehicleState = {
@@ -74,9 +76,8 @@ export type VehicleState = {
 
   activeRequestId?: number;
   requestStatus?: RequestStatus;
-
-  isTracingEmergency: boolean;
-  emergencyTrail: Array<[number, number]>;
+  lastRequestResolvedMs?: number;
+  requestWaitingTrail: Array<[number, number]>;
 };
 
 export type IntersectionState = {
@@ -85,7 +86,6 @@ export type IntersectionState = {
   lon: number;
   phase: SignalPhase;
   remainingSeconds: number;
-  activeRequests: Record<number, RequestStatus>;
 };
 
 export type AppState = {

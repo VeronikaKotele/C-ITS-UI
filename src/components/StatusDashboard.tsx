@@ -31,10 +31,6 @@ export function StatusDashboard({ state }: Props) {
             <br />
             Remaining: {intersection.remainingSeconds}s
             <br />
-            Active requests:
-            <pre>
-            {JSON.stringify(intersection.activeRequests, null, 2)}
-            </pre>
         </div>
         ))}
 

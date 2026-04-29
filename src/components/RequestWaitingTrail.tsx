@@ -7,12 +7,12 @@ type Props = {
 };
 
 export function RequestWaitingTrail({ vehicle }: Props) {
-    if (vehicle.requestStatus !== "PENDING" || vehicle.emergencyTrail.length <= 1) {
+    if (vehicle.requestStatus !== "PENDING" || (vehicle.requestWaitingTrail?.length || 0) <= 1) {
         return null;
     }
     return (
         <Polyline
-            positions={vehicle.emergencyTrail}
+            positions={vehicle.requestWaitingTrail}
             pathOptions={{ color: "red", weight: 3, dashArray: "5, 10" }}
         />
     );

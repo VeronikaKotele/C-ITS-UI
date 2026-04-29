@@ -10,7 +10,7 @@ export function IntersectionMarker({ intersection }: Props) {
   return (
     <Marker
       position={[intersection.lat, intersection.lon]}
-      icon={getIcon("RSU", intersection.phase)}
+      icon={getIcon("RSU", intersection.phase ?? "")}
     >
       <Popup>
           <strong>Intersection {intersection.stationId}</strong>

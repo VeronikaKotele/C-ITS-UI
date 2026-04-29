@@ -128,6 +128,10 @@ code {
 
 .map-icon.emergency {
   border-color: #dc2626;
+  animation: none;
+}
+
+.map-icon.emergency.pending {
   animation: pulse 1s infinite;
 }
 
@@ -135,12 +139,20 @@ code {
   border-color: #64748b;
 }
 
-.map-icon.rsu {
-  border-color: #7c3aed;
+.map-icon.intersection {
+  border-color: #171e5e8b;
 }
 
-.map-icon.intersection {
+.leaflet-marker-pane .map-icon.intersection.green {
   border-color: #16a34a;
+}
+
+.leaflet-marker-pane .map-icon.intersection.yellow {
+  border-color: #eab308;
+}
+
+.leaflet-marker-pane .map-icon.intersection.red {
+  border-color: #dc2626;
 }
 
 @keyframes pulse {

@@ -17,3 +17,17 @@ export const icons = {
   PASSENGER_CAR: makeEmojiIcon("🚗", "car"),
   RSU: makeEmojiIcon("🚦", "intersection"),
 };
+
+export function getIcon(type: string, state: string = "") {
+  switch (type) {
+    case "RSU":
+      return makeEmojiIcon("🚦", "intersection " + state.toLowerCase());
+    case "BUS":
+      return makeEmojiIcon("🚌", "bus " + state.toLowerCase());
+    case "EMERGENCY":
+      return makeEmojiIcon("🚑", "emergency " + state.toLowerCase());
+    case "PASSENGER_CAR":
+    default:
+      return makeEmojiIcon("🚗", "car " + state.toLowerCase());
+  }
+}

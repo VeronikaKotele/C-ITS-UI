@@ -1,7 +1,7 @@
 import { Marker, Popup } from "react-leaflet";
 import type { VehicleState } from "../types";
 import "leaflet/dist/leaflet.css";
-import { icons } from "./icons";
+import { getIcon } from "./icons";
 
 type Props = {
   vehicle: VehicleState;
@@ -12,7 +12,7 @@ export function VehicleMarker({ vehicle }: Props) {
         <Marker
             key={vehicle.stationId}
             position={[vehicle.lat, vehicle.lon]}
-            icon={icons[vehicle.stationType] ?? icons.PASSENGER_CAR}
+            icon={getIcon(vehicle.stationType, vehicle.requestStatus ?? "")}
         >
           <Popup>
             <strong>Vehicle {vehicle.stationId}</strong>

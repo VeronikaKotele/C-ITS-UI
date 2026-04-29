@@ -13,6 +13,7 @@ export function RequestWaitingTrail({ vehicle }: Props) {
     return (
         <Polyline
             positions={vehicle.emergencyTrail}
+            pathOptions={{ color: "red", weight: 3, dashArray: "5, 10" }}
         />
     );
 }

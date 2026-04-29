@@ -1,4 +1,4 @@
-import { MapContainer, Marker, Polyline, Popup, TileLayer } from "react-leaflet";
+import { MapContainer, TileLayer } from "react-leaflet";
 import type { IntersectionState, VehicleState } from "../types";
 import { IntersectionMarker } from "./IntersectionMarker";
 import { VehicleMarker } from "./VehicleMarker";

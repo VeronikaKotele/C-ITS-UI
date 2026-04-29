@@ -7,7 +7,16 @@ import { startCitsWebSocket } from "./ws";
 
 const initialState: AppState = {
   vehicles: {},
-  intersections: {},
+  intersections: {
+    1: {
+      stationId: 1,
+      lat: 48.776,
+      lon: 9.183,
+      phase: "GREEN",
+      remainingSeconds: 5,
+      activeRequests: {},
+    },
+  },
   totalCamCount: 0,
 };
 

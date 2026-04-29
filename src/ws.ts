@@ -1,4 +1,4 @@
-import type { CitsEvent } from "./types";
+import type { CitsEvent, SignalPhase } from "./types";
 
 export function startCitsWebSocket(
   onEvent: (event: CitsEvent) => void,
@@ -60,9 +60,31 @@ export function startCitsWebSocket(
   // Initial connection
   connect();
 
+  const phases: SignalPhase[] = ["RED", "YELLOW", "GREEN", "YELLOW"];
+  const phasesChangeTime: number[] = [5, 2, 5, 2]; // seconds
+
+  let phaseIndex = 2; // green
+  let remainingSeconds = phasesChangeTime[phaseIndex];
+
+  const simulationInterval = window.setInterval(() => {
+    if (remainingSeconds <= 0) {
+      phaseIndex = (phaseIndex + 1) % phases.length;
+      remainingSeconds = phasesChangeTime[phaseIndex];
+    }
+    onEvent({
+      type: "spatem",
+      intersectionId: 1,
+      phase: phases[phaseIndex],
+      remainingSeconds: remainingSeconds,
+      timestampMs: Date.now(),
+    });
+    remainingSeconds--;
+  }, 1000);
+
   return () => {
     shouldReconnect = false;
     clearReconnectTimer();
+    clearInterval(simulationInterval);
     if (socket) {
       socket.close();
       socket = null;

@@ -88,6 +88,12 @@ export type IntersectionState = {
   activeRequests: Record<number, RequestStatus>;
 };
 
+export type AppState = {
+  vehicles: Record<number, VehicleState>;
+  intersections: Record<number, IntersectionState>;
+  totalCamCount: number;
+};
+
 export function translateStationType(type: string): StationType {
   switch (type) {
     case "STATION_TYPE_PASSENGER_CAR":

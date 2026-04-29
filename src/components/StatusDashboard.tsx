@@ -51,8 +51,9 @@ export function StatusDashboard({ state }: Props) {
             <br />
             Role: {vehicle.role}
             <br />
-            Request: {vehicle.requestStatus ?? "none"}
-        </div>
+            Request: {vehicle.requestStatus ? vehicle.activeRequestId : ""} {vehicle.requestStatus ?? "none"} {vehicle.requestWaitingTrail?.length ?? ""}
+            <br />
+          </div>
         ))}
       <CamHistogram />
     </aside>

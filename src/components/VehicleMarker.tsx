@@ -24,6 +24,15 @@ export function VehicleMarker({ vehicle }: Props) {
             Speed: {vehicle.speed ?? "-"}
             <br />
             Request: {vehicle.requestStatus ?? "none"}
+            <br />
+            Last logs:
+            <br />
+            {vehicle.logs.slice(-3).map((log, index) => (
+              <span key={index}>
+                [{new Date(log.timestampMs).toLocaleTimeString()}] {log.message}
+                <br />
+              </span>
+            ))}
           </Popup>
         </Marker>
     );

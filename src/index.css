@@ -124,6 +124,11 @@ code {
 
 .map-icon.bus {
   border-color: #2563eb;
+  animation: none;
+}
+
+.map-icon.bus.pending {
+  animation: pulse 1s infinite;
 }
 
 .map-icon.emergency {

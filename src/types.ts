@@ -23,7 +23,8 @@ export type CitsEvent =
   | CamEvent
   | SremEvent
   | SsemEvent
-  | SpatemEvent;
+  | SpatemEvent
+  | LogsEvent;
 
 export type CamEvent = {
   type: "cam";
@@ -64,6 +65,14 @@ export type SpatemEvent = {
   lon: number;
 };
 
+export type LogsEvent = {
+  type: "logs";
+  stationId: number;
+  stationType: StationType;
+  message: string;
+  timestampMs: number;
+};
+
 export type VehicleState = {
   stationId: number;
   stationType: StationType;
@@ -78,6 +87,11 @@ export type VehicleState = {
   requestStatus?: RequestStatus;
   lastRequestResolvedMs?: number;
   requestWaitingTrail: Array<[number, number]>;
+
+  logs: Array<{
+    timestampMs: number;
+    message: string;
+  }>;
 };
 
 export type IntersectionState = {
@@ -86,6 +100,11 @@ export type IntersectionState = {
   lon: number;
   phase: SignalPhase;
   remainingSeconds: number;
+
+  logs: Array<{
+    timestampMs: number;
+    message: string;
+  }>;
 };
 
 export type AppState = {
@@ -96,13 +115,13 @@ export type AppState = {
 
 export function translateStationType(type: string): StationType {
   switch (type) {
-    case "STATION_TYPE_PASSENGER_CAR":
+    case "PASSENGER_CAR":
       return "PASSENGER_CAR";
-    case "STATION_TYPE_BUS":
+    case "BUS":
       return "BUS";
-    case "STATION_TYPE_SPECIAL_VEHICLES":
+    case "SPECIAL_VEHICLES":
       return "EMERGENCY";
-    case "STATION_TYPE_ROAD_SIDE_UNIT":
+    case "ROAD_SIDE_UNIT":
       return "RSU";
     default:
       return "PASSENGER_CAR";
@@ -111,11 +130,11 @@ export function translateStationType(type: string): StationType {
 
 export function translateRole(role: string): VehicleRole {
   switch (role) {
-    case "VEHICLE_ROLE_DEFAULT":
+    case "DEFAULT":
       return "DEFAULT";
-    case "VEHICLE_ROLE_PUBLIC_TRANSPORT":
+    case "PUBLIC_TRANSPORT":
       return "PUBLIC_TRANSPORT";
-    case "VEHICLE_ROLE_EMERGENCY":
+    case "EMERGENCY":
       return "EMERGENCY";
     default:
       return "DEFAULT";

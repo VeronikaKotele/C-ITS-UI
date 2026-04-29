@@ -21,6 +21,7 @@ export function appStateReducerOnCitsEvent(state: AppState, event: CitsEvent): A
           lon: event.lon,
           lastSeenMs: event.timestampMs,
           requestWaitingTrail: [],
+          logs: [],
         };
       }
 
@@ -124,6 +125,7 @@ export function appStateReducerOnCitsEvent(state: AppState, event: CitsEvent): A
           lon: event.lon,
           phase: event.phase,
           remainingSeconds: event.remainingSeconds,
+          logs: [],
         };
       }
 
@@ -140,6 +142,31 @@ export function appStateReducerOnCitsEvent(state: AppState, event: CitsEvent): A
           },
         },
       };
+    }
+
+    case "logs": {
+      if (event.stationType === "RSU") {
+        // currently we only log vehicle messages, but if needed, intersection logs can also be handled here.
+        return state;
+      } else {
+        const vehicle = state.vehicles[event.stationId];
+        if (!vehicle) {
+          return state;
+        }
+
+        const updatedVehicle: VehicleState = {
+          ...vehicle,
+          logs: [...vehicle.logs, { timestampMs: event.timestampMs, message: event.message }],
+        };
+
+        return {
+          ...state,
+          vehicles: {
+            ...state.vehicles,
+            [event.stationId]: updatedVehicle,
+          },
+        };
+      }
     }
 
     default:
